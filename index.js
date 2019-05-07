@@ -1,17 +1,50 @@
-const express = require('express')
-const helmet = require('helmet')
+var express = require('express')
+var app = express()
+var bodyParser = require('body-parser')
+const axios = require('axios')
 
-const app = express()
+app.use(bodyParser.json()) // for parsing application/json
+app.use(
+  bodyParser.urlencoded({
+    extended: true
+  })
+) // for parsing application/x-www-form-urlencoded
 
-// add some security-related headers to the response
-app.use(helmet())
+//This is the route the API will call
+app.post('/new-message', function(req, res) {
+  const { message } = req.body
 
-app.get('*', (req, res) => {
-    res.set('Content-Type', 'text/html')
-    res.status(200).send(`
-        <h1><marquee direction=right>Hello from Express path '/' on Now 2.0!</marquee></h1>
-        <h2>Go to <a href="/about">/about</a></h2>
-    `)
+  //Each message contains "text" and a "chat" object, which has an "id" which is the chat id
+
+  if (!message || message.text.toLowerCase().indexOf('marco') < 0) {
+    // In case a message is not present, or if our message does not have the word marco in it, do nothing and return an empty response
+    return res.end()
+  }
+
+  // If we've gotten this far, it means that we have received a message containing the word "marco".
+  // Respond by hitting the telegram bot API and responding to the approprite chat_id with the word "Polo!!"
+  // Remember to use your own API toked instead of the one below  "https://api.telegram.org/bot<your_api_token>/sendMessage"
+  axios
+    .post(
+      'curl -F "url=https://gameroom-jjdr0sj2y.now.sh//new-message"  https://api.telegram.org/bot706657448:AAFuYsiM2ewgGc_vSl3EP55I_5G0xOmEjA0/setWebhook',
+      {
+        chat_id: message.chat.id,
+        text: 'Polo!!'
+      }
+    )
+    .then(response => {
+      // We get here if the message was successfully posted
+      console.log('Message posted')
+      res.end('ok')
+    })
+    .catch(err => {
+      // ...and here if it was not
+      console.log('Error :', err)
+      res.end('Error :' + err)
+    })
 })
 
-module.exports = app
+// Finally, start our server
+app.listen(3000, function() {
+  console.log('Telegram app listening on port 3000!')
+})
